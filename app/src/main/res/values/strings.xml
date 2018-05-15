@@ -2,4 +2,6 @@
     <string name="app_name">FirebaseSocial</string>
     <string name="facebook_app_id">233542417380502</string>
     <string name="fb_login_protocol_scheme">fb233542417380502</string>
+    <string name="CONSUMER_KEY">tCSvpQnNUp6iHkXxrGIkmFEDG</string>
+    <string name="CONSUMER_SECRET"> YN0ysqOc1UasipAOWG6tLYgzQQPNbGqhlczlYXfCVXIBgDMcAA</string>
 </resources>

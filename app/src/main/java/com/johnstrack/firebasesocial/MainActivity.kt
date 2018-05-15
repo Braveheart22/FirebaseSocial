@@ -9,6 +9,7 @@ import android.widget.Toast
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
 import com.facebook.FacebookException
+import com.facebook.FacebookSdk
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -16,6 +17,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.*
+import com.twitter.sdk.android.core.*
 import kotlinx.android.synthetic.main.activity_main.*
 
 
@@ -28,6 +30,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // TWITTER CONFIG
+        val authConfig = TwitterAuthConfig(getString(R.string.CONSUMER_KEY), getString(R.string.CONSUMER_SECRET))
+        val twitterConfig = TwitterConfig.Builder(this)
+                .twitterAuthConfig(authConfig)
+                .build()
+        Twitter.initialize(twitterConfig)
+
         setContentView(R.layout.activity_main)
 
         // Configure GOOGLE Sign In
@@ -67,6 +77,21 @@ class MainActivity : AppCompatActivity() {
             }
 
         })
+
+        // TWITTER
+        twitterLoginBtn.callback = object : Callback<TwitterSession>() {
+            override fun success(result: Result<TwitterSession>?) {
+                val session = result?.data ?: return updateUI(null)
+                val credential = TwitterAuthProvider.getCredential(session.authToken.token, session.authToken.secret)
+                firebaseLogin(credential)
+            }
+
+            override fun failure(exception: TwitterException?) {
+                Log.e("ERROR", "Twitter login failed")
+                updateUI(null)
+            }
+
+        }
     }
 
     override fun onStart() {
@@ -87,8 +112,10 @@ class MainActivity : AppCompatActivity() {
             } catch (e: ApiException) {
                 Log.e("Error", "Could not sign in Google: ${e.statusCode}")
             }
-        } else {
+        } else if (FacebookSdk.isFacebookRequestCode(requestCode)) {
             callbackManager.onActivityResult(requestCode, resultCode, data)
+        } else if (requestCode == TwitterAuthConfig.DEFAULT_AUTH_REQUEST_CODE){
+            twitterLoginBtn.onActivityResult(requestCode, resultCode, data)
         }
     }
 
@@ -120,6 +147,7 @@ class MainActivity : AppCompatActivity() {
             when (info.providerId) {
                 GoogleAuthProvider.PROVIDER_ID -> googleSignInClient.signOut()
                 FacebookAuthProvider.PROVIDER_ID -> LoginManager.getInstance().logOut()
+                TwitterAuthProvider.PROVIDER_ID -> TwitterCore.getInstance().sessionManager.clearActiveSession()
             }
         }
 
